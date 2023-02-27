@@ -35,14 +35,17 @@ public class SettingsFragment extends Fragment {
 
     MyDatabaseHelper myDB;
     int prefMeal;
+    int defMeal;
     Context context;
     String dislikedFoods;
+    String favouriteFoods;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         context = getContext();
         prefMeal = 1;
+        defMeal = 1;
         myDB = new MyDatabaseHelper(context);
         // click listener (add disliked foods)
         View rootView = inflater.inflate(R.layout.fragment_settings, container, false);
@@ -61,6 +64,24 @@ public class SettingsFragment extends Fragment {
             // store to db
             addDislikedFood(dislikedFood.trim());
             Log.println(Log.DEBUG, "Settings", "Disliked food added");
+        });
+
+        // click listener (add favourite foods)
+        Button favouriteFoodsButton = (Button) rootView.findViewById(R.id.favouriteFoodsButton);
+        favouriteFoodsButton.setOnClickListener(v -> {
+            Log.println(Log.DEBUG, "Settings button", "clicked");
+            // get disliked food
+            EditText favouriteFoodField = (EditText)getView().findViewById(R.id.favouriteFoodsText);
+            String favouriteFood = favouriteFoodField.getText().toString();
+
+            if (favouriteFood.trim().isEmpty()) {
+                Log.println(Log.DEBUG, "Settings", "Unable to add favourite food");
+                return;
+            }
+
+            // store to db
+            addFavouriteFood(favouriteFood.trim());
+            Log.println(Log.DEBUG, "Settings", "Favourite food added");
         });
 
         Switch serviceSwitch = (Switch) rootView.findViewById(R.id.serviceSwitch);
@@ -92,8 +113,10 @@ public class SettingsFragment extends Fragment {
         super.onStart();
         //your initial code is here.
         getPrefMeal();
+        getDefMeal();
         getDislikedFoods();
         createDislikedFoods();
+        createFavouriteFoods();
     }
     void getPrefMeal(){
         Cursor cursor = myDB.readAllData();
@@ -106,6 +129,19 @@ public class SettingsFragment extends Fragment {
             }
         }
         createCards(prefMeal);
+    }
+
+    void getDefMeal(){
+        Cursor cursor = myDB.readAllData();
+        if (cursor.getCount() == 0){
+            Toast.makeText(context, "no data", Toast.LENGTH_SHORT).show();
+        } else {
+            while (cursor.moveToNext()) {
+                Log.println(Log.DEBUG, "DefMeal", cursor.getString(5));
+                defMeal = Integer.parseInt(cursor.getString(5));
+            }
+        }
+        createCards1(defMeal);
     }
 
     public void createDislikedFoods(){
@@ -131,6 +167,29 @@ public class SettingsFragment extends Fragment {
             }
         }
     }
+    public void createFavouriteFoods(){
+        LinearLayout linearLayout = (LinearLayout) getView().findViewById(R.id.favouriteFoods);
+        Gson gson = new Gson();
+        String[] array = gson.fromJson(favouriteFoods, String[].class);
+        if (!(array == null)) {
+            for (String a : array) {
+                Button button = new Button(context);
+                button.setText(a);
+                button.setOnClickListener(view -> {
+                    // remove favourite food
+                    linearLayout.removeView(button);
+
+                    // remove from db
+                    Gson gson1 = new Gson();
+                    ArrayList<String> array1 = gson1.fromJson(favouriteFoods, ArrayList.class);
+                    array1.remove(a);
+                    String newFavouriteFoods = gson1.toJson(array1);
+                    myDB.updateFavouriteFoods(newFavouriteFoods);
+                });
+                linearLayout.addView(button);
+            }
+        }
+    }
     void getDislikedFoods(){
         Cursor cursor = myDB.readAllData();
         if (cursor.getCount() == 0){
@@ -140,6 +199,18 @@ public class SettingsFragment extends Fragment {
                 dislikedFoods = cursor.getString(4);
             }
 //            createDislikedFoods();
+        }
+    }
+
+    void getFavouriteFoods(){
+        Cursor cursor = myDB.readAllData();
+        if (cursor.getCount() == 0){
+            Toast.makeText(context, "no data", Toast.LENGTH_SHORT).show();
+        } else {
+            while (cursor.moveToNext()) {
+                favouriteFoods = cursor.getString(6);
+            }
+//            createFavouriteFoods();
         }
     }
 
@@ -176,6 +247,38 @@ public class SettingsFragment extends Fragment {
         linearLayout.addView(button);
     }
 
+    // favourite food
+//    String favouriteFoods;
+    public void addFavouriteFood(String food) {
+        getFavouriteFoods();
+        Context context = getContext();
+        LinearLayout linearLayout = (LinearLayout) getView().findViewById(R.id.favouriteFoods);
+
+        Button button = new Button(context);
+        button.setText(food);
+        button.setOnClickListener(view -> {
+            // remove disliked food
+            linearLayout.removeView(button);
+
+            // remove from db
+            Gson gson = new Gson();
+            ArrayList<String> array = gson.fromJson(favouriteFoods, ArrayList.class);
+            array.remove(food);
+            String newFavouriteFoods = gson.toJson(array);
+            myDB.updateFavouriteFoods(newFavouriteFoods);
+        });
+        // add to db
+        Gson gson = new Gson();
+        ArrayList<String> array = gson.fromJson(favouriteFoods, ArrayList.class);
+        if (array == null) {
+            array = new ArrayList<>();
+        }
+        array.add(food);
+        String newFavouriteFoods = gson.toJson(array);
+        myDB.updateFavouriteFoods(newFavouriteFoods);
+        linearLayout.addView(button);
+    }
+
     @SuppressLint("SetTextI18n")
     public void createCards(int prefMeal){
         Context context = getActivity();
@@ -204,6 +307,40 @@ public class SettingsFragment extends Fragment {
             });
 
             if (i == prefMeal - 1) {
+                newCard.setBackgroundColor(Color.parseColor("#ffa500"));
+            }
+            cardLayout.addView(newCard);
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    public void createCards1(int defMeal){
+        Context context = getActivity();
+        LinearLayout cardLayout = (LinearLayout) getView().findViewById(R.id.cardLayout1);
+        cardLayout.removeAllViews();
+        // get pref meal from db => color the one where i == pref meal
+        int[] meals = {1, 2, 3, 4, 5, 6};
+        for (int i = 0; i < 6; i++){
+            int meal = meals[i];
+
+            CardView newCard = new CardView(Objects.requireNonNull(context));
+            LinearLayout newLinearLayout = new LinearLayout(context);
+            ImageView newImageView = new ImageView(context);
+            TextView newTextView = new TextView(context);
+            newTextView.setText("meal " + meal);
+            newLinearLayout.addView(newTextView);
+            newLinearLayout.addView(newImageView);
+            newCard.addView(newLinearLayout);
+            newCard.setMinimumHeight(250);
+            newCard.setMinimumWidth(250);
+            newCard.setOnClickListener(view -> {
+                // change in db
+                myDB.updateDefMeal(meal);
+                // reload cards
+                createCards1(meal);
+            });
+
+            if (i == defMeal - 1) {
                 newCard.setBackgroundColor(Color.parseColor("#ffa500"));
             }
             cardLayout.addView(newCard);

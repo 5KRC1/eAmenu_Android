@@ -20,6 +20,8 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_PASS = "password";
     private static final String COLUMN_PREF_MEAL = "prefered_meal";
     private static final String COLUMN_DISLIKED_FOODS = "disliked_foods";
+    private static final String COLUMN_DEF_MEAL = "default_meal";
+    private static final String COLUMN_FAVOURITE_FOODS = "favourite_foods";
 
     public MyDatabaseHelper(@Nullable Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -33,7 +35,9 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
                 COLUMN_USER + " TEXT, " +
                 COLUMN_PASS + " TEXT, " +
                 COLUMN_PREF_MEAL + " INTEGER, " +
-                COLUMN_DISLIKED_FOODS + " TEXT);";
+                COLUMN_DISLIKED_FOODS + " TEXT, " +
+                COLUMN_DEF_MEAL + " INTEGER, " +
+                COLUMN_FAVOURITE_FOODS + " TEXT);";
         db.execSQL(query);
     }
 
@@ -54,6 +58,8 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
             cv.put(COLUMN_PASS, "");
             cv.put(COLUMN_PREF_MEAL, 1);
             cv.put(COLUMN_DISLIKED_FOODS, "");
+            cv.put(COLUMN_DEF_MEAL, 1);
+            cv.put(COLUMN_FAVOURITE_FOODS, "");
             long result = db.insert(TABLE_NAME, null, cv);
             if  (result == -1) {
                 Toast.makeText(context, "Error uploading to db", Toast.LENGTH_SHORT).show();
@@ -76,10 +82,36 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+    void updateDefMeal(int defMeal){
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(COLUMN_DEF_MEAL, defMeal);
+
+        long result = db.update(TABLE_NAME, cv, "_id=?", new String[] {"1"});
+        if  (result == -1) {
+            Toast.makeText(context, "Error updating db", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(context, "Success updating db", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     void updateDislikedFoods(String dislikedFoods){
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(COLUMN_DISLIKED_FOODS, dislikedFoods);
+
+        long result = db.update(TABLE_NAME, cv, "_id=?", new String[] {"1"});
+        if  (result == -1) {
+            Toast.makeText(context, "Error updating db", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(context, "Success updating db", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    void updateFavouriteFoods(String favouriteFoods){
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put(COLUMN_FAVOURITE_FOODS, favouriteFoods);
 
         long result = db.update(TABLE_NAME, cv, "_id=?", new String[] {"1"});
         if  (result == -1) {

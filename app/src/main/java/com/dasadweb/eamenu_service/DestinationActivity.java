@@ -28,6 +28,8 @@ public class DestinationActivity extends IntentService {
     String password;
     String prefMeal;
     String dislikedFoods;
+    String defMeal;
+    String favouriteFoods;
 
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
@@ -43,7 +45,9 @@ public class DestinationActivity extends IntentService {
         post.setHeader("username", username);
         post.setHeader("password", password);
         post.setHeader("disliked-foods", dislikedFoods);
-        post.setHeader("selected-menu", prefMeal);
+        post.setHeader("preferred-menu", prefMeal);
+        post.setHeader("favourite-foods", favouriteFoods);
+        post.setHeader("default-menu", defMeal);
         try {
             client.execute(post, httpContext);
         } catch (
@@ -61,6 +65,8 @@ public class DestinationActivity extends IntentService {
                 password = cursor.getString(2);
                 prefMeal = cursor.getString(3);
                 dislikedFoods = cursor.getString(4);
+                defMeal = cursor.getString(5);
+                favouriteFoods = cursor.getString(6);
             }
         }
     }
